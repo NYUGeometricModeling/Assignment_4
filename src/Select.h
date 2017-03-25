@@ -10,7 +10,7 @@ namespace igl { namespace viewer {
 
 class Select {
     public:
-        Select(const Eigen::MatrixXd &V_,   // Vertices
+        Select(const Eigen::MatrixXd &V_,    // Vertices
                 const Eigen::MatrixXi &F_,   // Faces
                 const Eigen::MatrixXd &MF_,  // Face Barycenters
                 const Eigen::MatrixXd &FN_,  // Face Normals
@@ -29,13 +29,12 @@ class Select {
         igl::embree::EmbreeIntersector ei;
         const igl::viewer::ViewerCore &viewercore;
 
-        void addConstraintToLast();
         std::vector<Eigen::RowVector3d> strokePoints;
         std::vector<int> strokedFaces;
-        std::vector<Eigen::RowVector3d> strokedFacesVel;
 
-        int addStrokePoint(int mouse_x, int mouse_y);
-        void compute_new_smooth_points();
+        int m_addStrokePoint(int mouse_x, int mouse_y);
+        void m_compute_new_smooth_points();
+        void m_clearStroke();
 
     public:
         int strokeAdd(int mouse_x, int mouse_y);
@@ -43,9 +42,9 @@ class Select {
                 Eigen::MatrixXd &cfVel,
                 Eigen::MatrixXd &cf_stroke);
 
-        //the smooth stroke
+        // Smoothed stroke
         Eigen::MatrixXd smoothStrokePoints;
-        //the faces where the points of the smooth stroke belong to
+        // Faces to which the smooth stroke points belong
         Eigen::VectorXi smoothStrokeFaces;
         int nw;
 };

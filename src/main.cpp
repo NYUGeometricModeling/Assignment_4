@@ -27,7 +27,7 @@ std::vector<std::vector<int> > VF, VFi;
 
 // For selecting faces
 std::unique_ptr<Select> selector;
-bool selection_mode = true;
+bool selection_mode = false;
 bool activelySelecting = false;
 Eigen::VectorXi selected_faces;
 Eigen::MatrixXd selected_vec3(0, 3),
@@ -98,8 +98,12 @@ bool callback_key_down(Viewer& viewer, unsigned char key, int modifiers) {
                 Eigen::RowVector3d(0,1,0));
 
         //draw constraint vectors
-        igl::slice(MF,constraint_fi, 1, MF_s);
-        viewer.data.add_edges(MF_s, MF_s + vScale*constraint_vec3 , Eigen::RowVector3d(0,0,1));
+        igl::slice(MF, constraint_fi, 1, MF_s);
+        viewer.data.add_edges(
+                MF_s,
+                MF_s + vScale * constraint_vec3,
+                Eigen::RowVector3d(0,0,1));
+
 
         //draw the stroke of the selection
         int ns = selection_stroke_points.rows();
@@ -204,7 +208,6 @@ int main(int argc, char *argv[]) {
     // Read mesh
     igl::readOFF(argv[1],V,F);
 
-
     // Plot the mesh
     Viewer viewer;
     viewer.callback_key_down = callback_key_down;
@@ -275,7 +278,7 @@ void applySelection() {
     // Add selected faces and associated vectors to the existing constraints,
     // overwriting on conflicts.
 
-    // First, mark which indices are affected by the new constraints
+    // First, mark which faces are affected by the new constraints
     std::vector<bool> hasNewConstraint(F.rows());
     for (int i = 0; i < selected_faces.rows(); ++i) {
         assert(!hasNewConstraint.at(selected_faces[i]));
@@ -300,7 +303,7 @@ void applySelection() {
     }
 
     constraint_fi = selected_faces;
-    selected_vec3 = selected_vec3;
+    constraint_vec3 = selected_vec3;
 
     clearSelection();
 }
