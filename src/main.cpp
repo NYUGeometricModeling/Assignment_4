@@ -25,9 +25,9 @@ Eigen::MatrixXd FN(0,3);
 // Vertex-to-face adjacency
 std::vector<std::vector<int> > VF, VFi;
 
-// For selecting faces
+// Face constraint painting
 std::unique_ptr<Select> selector;
-bool selection_mode = false;
+bool    selection_mode = false;
 bool activelySelecting = false;
 Eigen::VectorXi selected_faces;
 Eigen::MatrixXd selected_vec3(0, 3),
@@ -37,10 +37,10 @@ Eigen::MatrixXd selected_vec3(0, 3),
 Eigen::VectorXi constraint_fi;
 Eigen::MatrixXd constraint_vec3(0, 3);
 
-//scale for displaying vectors
-double vScale;
+// Scale for displaying vectors
+double vScale = 0;
 
-//texture image (grayscale)
+// Texture image (grayscale)
 Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> texture_I;
 
 // Output: vector field (one vector per face), #F x3
@@ -56,7 +56,7 @@ Eigen::VectorXi is_flipped;
 // Output: per-face color array, #F x3
 Eigen::MatrixXd face_colors;
 
-//function declarations (see below for implementation)
+// Function declarations (see below for implementation)
 void clearSelection();
 void applySelection();
 void loadConstraints();
@@ -71,47 +71,49 @@ Eigen::MatrixXd readMatrix(const std::string &filename);
 
 bool callback_key_down(Viewer& viewer, unsigned char key, int modifiers) {
     if (key == '1') {
-        // draw selection and constraints only
+        // Draw selection and constraints only
         viewer.data.clear();
         viewer.data.set_mesh(V, F);
         viewer.data.set_texture(texture_I, texture_I, texture_I);
         viewer.core.show_texture = false;
 
         // Initialize face colors
-        face_colors = Eigen::MatrixXd::Constant(F.rows(),3,.9);
-        //color selected faces and constrained faces
-        //first, color selection
+        face_colors = Eigen::MatrixXd::Constant(F.rows(), 3, 0.9);
+        // Color selected faces...
         for (int i = 0; i < selected_faces.rows(); ++i)
-            face_colors.row(selected_faces[i]) << 231./255, 99./255, 113./255.;
+            face_colors.row(selected_faces[i]) << 231. / 255, 99. / 255, 113. / 255.;
 
-        //then, color constraints
-        for (int i = 0; i<constraint_fi.size(); ++i)
-            face_colors.row(constraint_fi(i)) << 69/255.,163/255.,232./255;
+        // ... and constrained faces
+        for (int i = 0; i < constraint_fi.size(); ++i)
+            face_colors.row(constraint_fi(i)) << 69 / 255., 163 / 255., 232. / 255;
         viewer.data.set_colors(face_colors);
 
-        //draw selection vectors
+        // Draw selection vectors
         Eigen::MatrixXd MF_s;
         igl::slice(MF, selected_faces, 1, MF_s);
         viewer.data.add_edges(
                 MF_s,
-                MF_s + vScale*selected_vec3,
-                Eigen::RowVector3d(0,1,0));
+                MF_s + vScale * selected_vec3,
+                Eigen::RowVector3d(0, 1, 0));
 
-        //draw constraint vectors
+        // Draw constraint vectors
         igl::slice(MF, constraint_fi, 1, MF_s);
         viewer.data.add_edges(
                 MF_s,
                 MF_s + vScale * constraint_vec3,
-                Eigen::RowVector3d(0,0,1));
+                Eigen::RowVector3d(0, 0, 1));
 
 
-        //draw the stroke of the selection
+        // Draw the stroke path
         int ns = selection_stroke_points.rows();
         if (ns) {
-            viewer.data.add_points(selection_stroke_points,Eigen::RowVector3d(0.4,0.4,0.4));
-            viewer.data.add_edges(selection_stroke_points.topRows(ns-1), selection_stroke_points.bottomRows(ns-1), Eigen::RowVector3d(0.7,0.7,.7));
+            viewer.data.add_points(selection_stroke_points, Eigen::RowVector3d(0.4, 0.4, 0.4));
+            viewer.data.add_edges(selection_stroke_points.   topRows(ns - 1),
+                                  selection_stroke_points.bottomRows(ns - 1),
+                                  Eigen::RowVector3d(0.7, 0.7, 0.7));
         }
     }
+
     if (key == '2') {
         // Field interpolation
         viewer.data.clear();
@@ -121,16 +123,16 @@ bool callback_key_down(Viewer& viewer, unsigned char key, int modifiers) {
 
         // Show constraints
         // Initialize face colors
-        face_colors = Eigen::MatrixXd::Constant(F.rows(),3,.9);
+        face_colors = Eigen::MatrixXd::Constant(F.rows(), 3, 0.9);
         // Color the constrained faces
-        for (int i = 0; i<constraint_fi.size(); ++i)
-            face_colors.row(constraint_fi(i)) << 69/255.,163/255.,232./255;
+        for (int i = 0; i < constraint_fi.size(); ++i)
+            face_colors.row(constraint_fi(i)) << 69 / 255., 163 / 255., 232. / 255;
         viewer.data.set_colors(face_colors);
 
         // Draw constraint vectors
         Eigen::MatrixXd MF_s;
-        igl::slice(MF,constraint_fi, 1, MF_s);
-        viewer.data.add_edges(MF_s, MF_s + vScale*constraint_vec3 , Eigen::RowVector3d(0,0,1));
+        igl::slice(MF, constraint_fi, 1, MF_s);
+        viewer.data.add_edges(MF_s, MF_s + vScale * constraint_vec3, Eigen::RowVector3d(0, 0, 1));
 
         // Add your code for interpolating a vector field here
     }
@@ -141,10 +143,11 @@ bool callback_key_down(Viewer& viewer, unsigned char key, int modifiers) {
         viewer.data.set_mesh(V, F);
         viewer.data.set_texture(texture_I, texture_I, texture_I);
         viewer.core.show_texture = false;
+
         // Draw constraint vectors
         Eigen::MatrixXd MF_s;
-        igl::slice(MF,constraint_fi, 1, MF_s);
-        viewer.data.add_edges(MF_s, MF_s + vScale*constraint_vec3 , Eigen::RowVector3d(0,0,1));
+        igl::slice(MF, constraint_fi, 1, MF_s);
+        viewer.data.add_edges(MF_s, MF_s + vScale * constraint_vec3, Eigen::RowVector3d(0, 0, 1));
 
         // Add your code for fitting and displaying the scalar function here
     }
@@ -157,7 +160,7 @@ bool callback_key_down(Viewer& viewer, unsigned char key, int modifiers) {
 
         // Add your code for computing hamonic parameterization here, store in UV
 
-        viewer.data.set_uv(10*UV);
+        viewer.data.set_uv(10 * UV);
         viewer.core.show_texture = true;
     }
 
@@ -169,7 +172,7 @@ bool callback_key_down(Viewer& viewer, unsigned char key, int modifiers) {
 
         // Add your code for computing LSCM parameterization here, store in UV
 
-        viewer.data.set_uv(10*UV);
+        viewer.data.set_uv(10 * UV);
         viewer.core.show_texture = true;
     }
 
@@ -201,7 +204,7 @@ bool callback_key_down(Viewer& viewer, unsigned char key, int modifiers) {
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        cout << "Usage ex1_bin mesh.obj" << endl;
+        cout << "Usage assignment4_bin mesh.obj" << endl;
         exit(0);
     }
 
@@ -214,7 +217,7 @@ int main(int argc, char *argv[]) {
     callback_key_down(viewer, '1', 0);
     viewer.callback_mouse_down = callback_mouse_down;
     viewer.callback_mouse_move = callback_mouse_move;
-    viewer.callback_mouse_up = callback_mouse_up;
+    viewer.callback_mouse_up   = callback_mouse_up;
 
     viewer.callback_init = [&](Viewer &v) {
         v.ngui->addGroup("Selection");
@@ -227,11 +230,11 @@ int main(int argc, char *argv[]) {
             applySelection();
             callback_key_down(v, '1', 0);
         });
-        v.ngui->addButton("Load Selection", [&]() {
+        v.ngui->addButton("Load Constraints", [&]() {
             loadConstraints();
             callback_key_down(v, '1', 0);
         });
-        v.ngui->addButton("Save Selection", [&]() {
+        v.ngui->addButton("Save Constraints", [&]() {
             saveConstraints();
             callback_key_down(v, '1', 0);
         });
@@ -248,19 +251,19 @@ int main(int argc, char *argv[]) {
     igl::per_face_normals(V, F, FN);
 
     // Compute vertex to face adjacency
-    igl::vertex_triangle_adjacency(V,F,VF,VFi);
+    igl::vertex_triangle_adjacency(V, F, VF, VFi);
 
     // Initialize selector
-    selector = std::unique_ptr<Select>(new Select(V, F, MF, FN, VF, viewer.core, 2));
+    selector = std::unique_ptr<Select>(new Select(V, F, FN, viewer.core));
 
     // Initialize scale for displaying vectors
-    vScale = .5 * igl::avg_edge_length(V,F);
+    vScale = 0.5 * igl::avg_edge_length(V, F);
 
     // Initialize texture image
     line_texture();
 
     // Initialize texture coordinates with something
-    UV.setZero(V.rows(),2);
+    UV.setZero(V.rows(), 2);
 
     viewer.data.set_texture(texture_I, texture_I, texture_I);
     viewer.core.point_size = 10;
@@ -270,54 +273,51 @@ int main(int argc, char *argv[]) {
 
 void clearSelection() {
     selected_faces.resize(0);
-    selected_vec3.resize(0,3);
+    selected_vec3.resize(0, 3);
     selection_stroke_points.resize(0, 3);
 }
 
 void applySelection() {
-    // Add selected faces and associated vectors to the existing constraints,
-    // overwriting on conflicts.
+    // Add selected faces and associated constraint vectors to the existing set.
+    // On conflicts, we take the latest stroke.
+    std::vector<bool> hasConstraint(F.rows());
 
-    // First, mark which faces are affected by the new constraints
-    std::vector<bool> hasNewConstraint(F.rows());
-    for (int i = 0; i < selected_faces.rows(); ++i) {
-        assert(!hasNewConstraint.at(selected_faces[i]));
-        hasNewConstraint.at(selected_faces[i]) = true;
-    }
+    Eigen::VectorXi uniqueConstraintFi  (selected_faces.rows() + constraint_fi.rows());
+    Eigen::MatrixXd uniqueConstraintVec3(selected_faces.rows() + constraint_fi.rows(), 3);
 
-    // Count how many constraints we'll have in total
-    size_t numConstraints = selected_faces.rows();
-    for (int i = 0; i < constraint_fi.rows(); ++i)
-        if (!hasNewConstraint.at(constraint_fi[i])) ++numConstraints;
-
-    // Add the old, non-conflicting constraints to the selection
-    size_t offset = selected_faces.rows();
-    selected_faces.conservativeResize(numConstraints);
-    selected_vec3 .conservativeResize(numConstraints, Eigen::NoChange);
-    for (int i = 0; i < constraint_fi.rows(); ++i) {
-        if (!hasNewConstraint.at(constraint_fi[i])) {
-            selected_faces[offset]    = constraint_fi[i];
-            selected_vec3.row(offset) = constraint_vec3.row(i);
-            ++offset;
+    int numConstraints = 0;
+    auto applyConstraints = [&](const Eigen::VectorXi &faces, 
+                                const Eigen::MatrixXd &vecs) {
+        // Apply constraints in reverse chronological order
+        for (int i = faces.rows() - 1; i >= 0; --i) {
+            const int fi = faces[i];
+            if (!hasConstraint.at(fi)) {
+                hasConstraint[fi] = true;
+                uniqueConstraintFi      [numConstraints] = fi;
+                uniqueConstraintVec3.row(numConstraints) = vecs.row(i);
+                ++numConstraints;
+            }
         }
-    }
+    };
 
-    constraint_fi = selected_faces;
-    constraint_vec3 = selected_vec3;
+    applyConstraints(selected_faces,   selected_vec3);
+    applyConstraints(constraint_fi,  constraint_vec3);
+
+    constraint_fi   = uniqueConstraintFi.  topRows(numConstraints);
+    constraint_vec3 = uniqueConstraintVec3.topRows(numConstraints);
 
     clearSelection();
 }
 
 void clearConstraints() {
-    constraint_fi.resize(0, 1);
-    constraint_vec3.resize(0,3);
+    constraint_fi.resize(0);
+    constraint_vec3.resize(0, 3);
 }
 
 void loadConstraints() {
     clearConstraints();
     std::string filename = igl::file_dialog_open();
     if (!filename.empty()) {
-
         Eigen::MatrixXd mat = readMatrix(filename);
         constraint_fi   = mat.leftCols(1).cast<int>();
         constraint_vec3 = mat.rightCols(3);
@@ -341,7 +341,7 @@ bool callback_mouse_down(Viewer& viewer, int button, int modifier) {
 
     if (selection_mode) {
         int fid = selector->strokeAdd(viewer.current_mouse_x, viewer.current_mouse_y);
-        activelySelecting = fid>=0;
+        activelySelecting = fid >= 0;
         return activelySelecting;
     }
 
@@ -349,25 +349,16 @@ bool callback_mouse_down(Viewer& viewer, int button, int modifier) {
 }
 
 bool callback_mouse_move(Viewer& viewer, int mouse_x, int mouse_y) {
-    if (selection_mode) {
-        if (activelySelecting) {
-            int fid = selector->strokeAdd(mouse_x, mouse_y);
-            activelySelecting = fid>=0;
-            return true;
-        }
+    if (selection_mode && activelySelecting) {
+        selector->strokeAdd(mouse_x, mouse_y);
+        return true;
     }
     return false;
 }
 
-bool callback_mouse_up(Viewer& viewer, int button, int modifier)
-{
+bool callback_mouse_up(Viewer& viewer, int button, int modifier) {
     if (activelySelecting) {
-        if (selection_mode) {
-            selected_faces.resize(0,1);
-            selected_vec3.resize(0,3);
-            selection_stroke_points.resize(0, 3);
-            selector->strokeFinish(selected_faces, selected_vec3, selection_stroke_points);
-        }
+        selector->strokeFinish(selected_faces, selected_vec3, selection_stroke_points);
         activelySelecting = false;
         callback_key_down(viewer, '1', 0);
         return true;
@@ -377,56 +368,35 @@ bool callback_mouse_up(Viewer& viewer, int button, int modifier)
 };
 
 void line_texture() {
-    unsigned size = 128;
-    unsigned size2 = size / 2;
-    unsigned lineWidth = 3;
+    int size = 128;              // Texture size
+    int w    = 7;                // Line width
+    int pos  = size / 2 - w / 2; // Center the line
     texture_I.setConstant(size, size, 255);
-    for (unsigned i = 0; i < size; ++i)
-        for (unsigned j = size2 - lineWidth; j <= size2 + lineWidth; ++j)
-            texture_I(i, j) = 0;
-    for (unsigned i = size2 - lineWidth; i <= size2 + lineWidth; ++i)
-        for (unsigned j = 0; j < size; ++j)
-            texture_I(i, j) = 0;
+    texture_I.block(0, pos, size, w).setZero();
+    texture_I.block(pos, 0, w, size).setZero();
 }
 
-#define MAXBUFSIZE ((int) 1e6)
-Eigen::MatrixXd readMatrix(const std::string &filename) {
-    int cols = 0, rows = 0;
-    double buff[MAXBUFSIZE];
-
-    // Read numbers from file into buffer.
-    ifstream infile;
-    infile.open(filename);
+Eigen::MatrixXd readMatrix(const string &filename) {
+    ifstream infile(filename);
     if (!infile.is_open())
-        return Eigen::MatrixXd::Zero(0, 0);
+        throw runtime_error("Failed to open " + filename);
 
-    while (! infile.eof()) {
-        string line;
-        getline(infile, line);
-
-        int temp_cols = 0;
-        stringstream stream(line);
-        while(! stream.eof())
-            stream >> buff[cols * rows + temp_cols++];
-
-        if (temp_cols == 0)
-            continue;
-
-        if (cols == 0)
-            cols = temp_cols;
-
-        rows++;
+    vector<double> data;
+    int unused_Var;
+    size_t rows = 0, cols = 0;
+    for (string line; getline(infile, line); ++rows) {
+        stringstream ss(line);
+        const size_t prevSize = data.size();
+        copy(istream_iterator<double>(ss), istream_iterator<double>(),
+             back_inserter(data));
+        if (rows == 0) cols = data.size() - prevSize;
+        if (cols != data.size() - prevSize) throw runtime_error("Unequal row sizes.");
     }
 
-    infile.close();
+    Eigen::MatrixXd mat(rows, cols);
+    for (int i = 0; i < int(rows); ++i)
+        for (size_t j = 0; j < cols; ++j)
+            mat(i, j) = data[i * cols + j];
 
-    rows--;
-
-    // Populate matrix with numbers.
-    Eigen::MatrixXd result(rows,cols);
-    for (int i = 0; i < rows; ++i)
-        for (int j = 0; j < cols; ++j)
-            result(i,j) = buff[cols * i + j];
-
-    return result;
+    return mat;
 }

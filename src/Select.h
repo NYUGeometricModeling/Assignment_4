@@ -1,52 +1,67 @@
-#ifndef __CurlFree__Select__
-#define __CurlFree__Select__
+#ifndef SELECT_H
+#define SELECT_H
 
 #include <igl/embree/EmbreeIntersector.h>
 
-//forward declaration of ViewerCore (needed for unprojection)
+// Forward declaration of ViewerCore (needed for unprojection)
 namespace igl { namespace viewer {
     class ViewerCore;
 }}
 
 class Select {
     public:
-        Select(const Eigen::MatrixXd &V_,    // Vertices
-                const Eigen::MatrixXi &F_,   // Faces
-                const Eigen::MatrixXd &MF_,  // Face Barycenters
-                const Eigen::MatrixXd &FN_,  // Face Normals
-                const std::vector<std::vector<int> > &VF_, // Vertex->face adjacency
-                const igl::viewer::ViewerCore &v,
-                const int n); // Size of moving average for point smoothing.
+        Select(const Eigen::MatrixXd &V,   // Vertices
+               const Eigen::MatrixXi &F,   // Faces
+               const Eigen::MatrixXd &FN,  // Face Normals
+               const igl::viewer::ViewerCore &v,
+               const int n = 2) // Size of moving average for point smoothing.
+            : m_V(V), m_F(F), m_FN(FN), m_viewercore(v), m_nw(n)
+        {
+                ei.init(V.cast<float>(), F, true);
+        }
+
+        int strokeAdd(int mouse_x, int mouse_y) {
+            return m_addStrokePoint(mouse_x, mouse_y);
+        }
+
+        void strokeFinish(Eigen::VectorXi &cf,
+                          Eigen::MatrixXd &cfVel,
+                          Eigen::MatrixXd &path) {
+            m_smoothPath();
+            m_getFaceConstraints(cf, cfVel);
+
+            path.resize(m_strokePoints.size(), 3);
+            for (size_t i = 0; i < m_strokePoints.size(); ++i)
+                path.row(i) = m_strokePoints[i];
+
+            m_clearStroke();
+        }
 
         ~Select() { }
 
     private:
-        const Eigen::MatrixXd &V;
-        const Eigen::MatrixXi &F;
-        const Eigen::MatrixXd &MF;
-        const Eigen::MatrixXd &FN;
-        const std::vector<std::vector<int> > &VF;
+        int  m_addStrokePoint(int mouse_x, int mouse_y);
+        void m_smoothPath();
+        void m_getFaceConstraints(Eigen::VectorXi &cf, Eigen::MatrixXd &cfVel) const;
+
+        void m_clearStroke() {
+            m_strokePoints.clear();
+            m_strokedFaces.clear();
+        }
+
+        // Current stroke path and hit faces.
+        std::vector<Eigen::RowVector3d> m_strokePoints;
+        std::vector<int>                m_strokedFaces;
+
+        const Eigen::MatrixXd &m_V;
+        const Eigen::MatrixXi &m_F;
+        const Eigen::MatrixXd &m_FN;
+        const igl::viewer::ViewerCore &m_viewercore;
+
+        // Smoothing radius (index units)
+        const int m_nw;
+
         igl::embree::EmbreeIntersector ei;
-        const igl::viewer::ViewerCore &viewercore;
-
-        std::vector<Eigen::RowVector3d> strokePoints;
-        std::vector<int> strokedFaces;
-
-        int m_addStrokePoint(int mouse_x, int mouse_y);
-        void m_compute_new_smooth_points();
-        void m_clearStroke();
-
-    public:
-        int strokeAdd(int mouse_x, int mouse_y);
-        void strokeFinish(Eigen::VectorXi &cf,
-                Eigen::MatrixXd &cfVel,
-                Eigen::MatrixXd &cf_stroke);
-
-        // Smoothed stroke
-        Eigen::MatrixXd smoothStrokePoints;
-        // Faces to which the smooth stroke points belong
-        Eigen::VectorXi smoothStrokeFaces;
-        int nw;
 };
 
-#endif
+#endif /* end of include guard: SELECT_H */

@@ -54,7 +54,12 @@ endif()
 # Adding libigl: choose the path to your local copy libigl 
 # This is going to compile everything you requested 
 #message(FATAL_ERROR "${PROJECT_SOURCE_DIR}/../libigl/cmake")
+add_definitions(-Wno-unused-variable) # Embree in LibIGL currently emits unused var warnings
 add_subdirectory("${LIBIGL_INCLUDE_DIR}/../shared/cmake" "libigl")
+
+remove_definitions(-Wno-unused-variable) # We want unused var warnings for our code...
+add_definitions(-Wall)          # ... and everything else
+add_definitions(-Wsign-compare) # (Clang doesn't care about comparison signedness by default...)
 
 # libigl information 
 message("libigl includes: ${LIBIGL_INCLUDE_DIRS}")
@@ -64,7 +69,6 @@ message("libigl extra libraries: ${LIBIGL_EXTRA_LIBRARIES}")
 message("libigl definitions: ${LIBIGL_DEFINITIONS}")
 
 # Prepare the build environment
-include_directories(${LIBIGL_INCLUDE_DIRS})
 add_definitions(${LIBIGL_DEFINITIONS})
 
 # Add your project files
@@ -77,3 +81,4 @@ endif (TRAVISCI_BUILD)
 
 add_executable(${PROJECT_NAME}_bin ${SOURCES} ${LIBIGL_EXTRA_SOURCES})
 target_link_libraries(${PROJECT_NAME}_bin ${LIBIGL_LIBRARIES} ${LIBIGL_EXTRA_LIBRARIES})
+target_include_directories(${PROJECT_NAME}_bin SYSTEM PRIVATE ${LIBIGL_INCLUDE_DIRS})
