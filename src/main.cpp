@@ -8,6 +8,7 @@
 #include <igl/file_dialog_open.h>
 /*** insert any libigl headers here ***/
 #include <memory>
+#include <iterator>
 
 #include "Select.h"
 
@@ -220,7 +221,7 @@ int main(int argc, char *argv[]) {
     viewer.callback_mouse_up   = callback_mouse_up;
 
     viewer.callback_init = [&](Viewer &v) {
-        v.ngui->addGroup("Selection");
+        v.ngui->addWindow(Eigen::Vector2i(230, 10), "Selection");
         v.ngui->addVariable("Selection Mode", selection_mode);
         v.ngui->addButton("Clear Selection", [&]() {
             clearSelection();
