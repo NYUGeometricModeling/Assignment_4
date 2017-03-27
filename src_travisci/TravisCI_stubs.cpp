@@ -7,7 +7,7 @@
 //  symbols. (Only build this on TravisCI!!!)
 */
 ////////////////////////////////////////////////////////////////////////////////
-#include <gl.h>
+#include <GL/gl.h>
 
 extern "C" {
 GLuint glGetUniformBlockIndex(GLuint /* program */,
