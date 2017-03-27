@@ -382,7 +382,6 @@ Eigen::MatrixXd readMatrix(const string &filename) {
         throw runtime_error("Failed to open " + filename);
 
     vector<double> data;
-    int unused_Var;
     size_t rows = 0, cols = 0;
     for (string line; getline(infile, line); ++rows) {
         stringstream ss(line);

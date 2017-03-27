@@ -75,6 +75,7 @@ add_definitions(${LIBIGL_DEFINITIONS})
 # Note: we need some stubs for building to succeed on TravisCI.
 if (TRAVISCI_BUILD)
     FILE(GLOB SOURCES src/*.cpp src_travisci/*.cpp)
+    LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Select.cpp)
 else (TRAVISCI_BUILD)
     FILE(GLOB SOURCES src/*.cpp)
 endif (TRAVISCI_BUILD)

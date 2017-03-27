@@ -7,13 +7,20 @@
 //  symbols. (Only build this on TravisCI!!!)
 */
 ////////////////////////////////////////////////////////////////////////////////
-#include <GL/gl.h>
+#include <OpenGL/gl.h>
 
 extern "C" {
 GLuint glGetUniformBlockIndex(GLuint /* program */,
-                              const GLchar * /* uniformBlockName */) { } 
+                              const GLchar * /* uniformBlockName */) { return 0; }
 
 GLuint glUniformBlockBinding(GLuint /* program */,
                              GLuint /* uniformBlockIndex */,
-                             GLuint /* uniformBlockBinding */) { }
+                             GLuint /* uniformBlockBinding */) { return 0; }
 }
+
+// For Assignment 4 selection code.
+#include <Eigen/Core>
+#include "../src/Select.h"
+int Select::m_addStrokePoint(int mouse_x, int mouse_y) { return 0; }
+void Select::m_smoothPath() { }
+void Select::m_getFaceConstraints(Eigen::VectorXi &cf, Eigen::MatrixXd &cfVel) const { }
