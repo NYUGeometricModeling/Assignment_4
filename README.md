@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/NYUGP17/Assignment_4.svg?branch=master)](https://travis-ci.org/NYUGP17/Assignment_4)
+[![Build Status](https://travis-ci.org/NYUGeometricModeling/GM_Assignment_4.svg?branch=master)](https://travis-ci.org/NYUGeometricModeling/GM_Assignment_4)
 # Assignment 4: Mesh Parameterization
 
 This repository contains the viewer/painting code and data files you'll need for
