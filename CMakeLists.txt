@@ -34,4 +34,4 @@ else (TRAVISCI_BUILD)
 endif (TRAVISCI_BUILD)
 
 add_executable(${PROJECT_NAME}_bin ${SOURCES})
-target_link_libraries(${PROJECT_NAME}_bin igl::core igl::viewer)
+target_link_libraries(${PROJECT_NAME}_bin igl::core igl::viewer igl::embree)
